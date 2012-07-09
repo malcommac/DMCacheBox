@@ -2,8 +2,6 @@
 //  DMCacheBox.h
 //  Fast advanced caching system for Objective-C (Cocoa/iOS compatible)
 //
-//  LondonPocket
-//
 //  Created by Daniele Margutti (daniele.margutti@gmail.com) on 7/9/12.
 //  Web: http://www.danielemargutti.com
 //
