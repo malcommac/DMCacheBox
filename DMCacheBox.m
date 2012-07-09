@@ -89,8 +89,7 @@
 
 - (void) save {
 	@synchronized(self) {
-		[cacheContent writeToFile:[self cacheDatabasePath]
-                       atomically:YES];
+        [[NSKeyedArchiver archivedDataWithRootObject:cacheContent] writeToFile:[self cacheDatabasePath] atomically:YES];
 	}
 }
 
