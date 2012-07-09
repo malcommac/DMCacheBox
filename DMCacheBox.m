@@ -135,11 +135,11 @@ static NSString* kDMCacheBoxCacheDirectory;
     
     NSMutableArray *keysToRemove = [[NSMutableArray alloc] init];
 
-    NSDate *currentDate = [NSDate date];
+    NSTimeInterval currentDate = [[NSDate date] timeIntervalSince1970];
     [cacheContent.allKeys enumerateObjectsUsingBlock:^(NSString* cacheIdentifier, NSUInteger idx, BOOL *stop) {
         NSDictionary *cacheEntry = [cacheContent objectForKey:cacheIdentifier];
-        NSDate *expireDate = ((NSDate*)[cacheEntry objectForKey:kDMCacheEntry_ExpireDate]);
-        if ([[currentDate earlierDate: expireDate] isEqualToDate:currentDate])
+        NSTimeInterval expireDate = [[cacheEntry objectForKey:kDMCacheEntry_ExpireDate] doubleValue];
+        if (currentDate > expireDate)
             [keysToRemove addObject:cacheIdentifier];
     }];
     return keysToRemove;
@@ -150,6 +150,11 @@ static NSString* kDMCacheBoxCacheDirectory;
     // Remove cache identifier set
 - (void) removeCachedIdentifiers:(NSArray *) cacheIdentifiers
                 withCompletition:(DMCacheBoxMultipleOperationHandler) completition {
+    
+    if ([cacheIdentifiers count] == 0) {
+        completition(0,[cacheContent count]);
+        return;
+    }
     
     NSOperationQueue* deleteOperations = [[NSOperationQueue alloc] init];
     [deleteOperations setSuspended:YES];
@@ -201,9 +206,10 @@ static NSString* kDMCacheBoxCacheDirectory;
 
 - (BOOL) isCachedIdentifierValid:(NSString *) cacheIdentifier {
     NSDictionary *cacheDict = [cacheContent objectForKey:cacheIdentifier];
-    if (cacheDict == nil) return NO;
-    NSDate *cache_date = [cacheDict objectForKey:kDMCacheEntry_ExpireDate];
-    if ([[[NSDate date] earlierDate:cache_date] isEqualToDate:cache_date])
+    if (cacheDict == nil)
+        return NO;
+    NSTimeInterval cache_date = [[cacheDict objectForKey:kDMCacheEntry_ExpireDate] doubleValue];
+    if ([[NSDate date] timeIntervalSince1970] > cache_date)
         return NO;
     return [[NSFileManager defaultManager] fileExistsAtPath:[self cacheDirectoryForIdentifier:cacheIdentifier]];
 }
@@ -290,7 +296,8 @@ withCompletition:(DMCacheBoxStoreData) completition {
 
 - (NSDictionary *) entryWithExtraParams:(NSDictionary *) params expireIn:(NSTimeInterval) expireInterval {
     NSDate *expire_date = [NSDate dateWithTimeIntervalSinceNow:expireInterval];
-    NSMutableDictionary *paramDict = [[NSMutableDictionary alloc] initWithObjectsAndKeys:expire_date,kDMCacheEntry_ExpireDate, nil];
+    NSMutableDictionary *paramDict = [[NSMutableDictionary alloc] initWithObjectsAndKeys:
+                                      [NSNumber numberWithDouble:[expire_date timeIntervalSince1970]],kDMCacheEntry_ExpireDate, nil];
     if (params)
         [paramDict addEntriesFromDictionary:params];
     return paramDict;
