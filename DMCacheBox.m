@@ -175,7 +175,8 @@ static NSString* kDMCacheBoxCacheDirectory;
     [deleteOperations setSuspended:NO];
     [deleteOperations waitUntilAllOperationsAreFinished];
     // delete entry for successfully removed cached identifiers
-    [cacheContent removeObjectsForKeys:removedCachedIdentifiers];
+    if ([removedCachedIdentifiers count] > 0)
+        [cacheContent removeObjectsForKeys:removedCachedIdentifiers];
     
     [self save]; // save changes
     
@@ -196,6 +197,17 @@ static NSString* kDMCacheBoxCacheDirectory;
             [self save]; // save changes
         }];
     }
+}
+
+- (BOOL) setObject:(id) archivableObj forIdentifier:(NSString *) cacheIdentifier expireIn:(NSTimeInterval) expireInterval {
+    [self setData:[NSKeyedArchiver archivedDataWithRootObject:archivableObj]
+    forIdentifier:cacheIdentifier
+         expireIn:expireInterval];
+    return YES;
+}
+
+- (id) objectForIdentifier:(NSString *) cacheIdentifier {
+    return [NSKeyedUnarchiver unarchiveObjectWithData:[self dataForIdentifier:cacheIdentifier]];
 }
 
 #pragma mark - QUERY FOR CACHED IDENTIFIERS

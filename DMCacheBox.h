@@ -48,6 +48,9 @@ typedef void (^DMCacheBoxStoreProgress)(NSUInteger itemsDone);
 - (BOOL) setFileAtPath:(NSString *) filePathToCache forIdentifier:(NSString *) cacheIdentifier;
 - (BOOL) setFileAtPath:(NSString *) filePathToCache forIdentifier:(NSString *) cacheIdentifier expireIn:(NSTimeInterval) expireInterval;
 
+- (BOOL) setObject:(id) archivableObj forIdentifier:(NSString *) cacheIdentifier expireIn:(NSTimeInterval) expireInterval;
+- (id) objectForIdentifier:(NSString *) cacheIdentifier;
+
 #pragma mark - IMAGE UTILS
 
 #if TARGET_OS_IPHONE
