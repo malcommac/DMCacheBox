@@ -124,7 +124,9 @@ static NSString* kDMCacheBoxCacheDirectory;
     
     [self removeCachedIdentifiers:(onlyExpiredIdentifiers ? [self expiredCachedIdentifiers] : [cacheContent allKeys])
                  withCompletition:^(NSUInteger removedIdentifiers, NSUInteger remainingIdentifiers) {
-                     completition(removedIdentifiers,remainingIdentifiers);
+                     dispatch_async(dispatch_get_main_queue(), ^{
+                         completition(removedIdentifiers,remainingIdentifiers);
+                     });
                  }];
 }
 
@@ -152,7 +154,9 @@ static NSString* kDMCacheBoxCacheDirectory;
                 withCompletition:(DMCacheBoxMultipleOperationHandler) completition {
     
     if ([cacheIdentifiers count] == 0) {
-        completition(0,[cacheContent count]);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            completition(0,[cacheContent count]);
+        });
         return;
     }
     
@@ -180,7 +184,9 @@ static NSString* kDMCacheBoxCacheDirectory;
     
     [self save]; // save changes
     
-    completition(removedItemsCounter,[cacheContent count]);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        completition(removedItemsCounter,[cacheContent count]);
+    });
 }
 
     // Remove cached identifier
@@ -188,12 +194,16 @@ static NSString* kDMCacheBoxCacheDirectory;
                withCompletition:(DMCacheBoxOperationHandler) completition {
     NSString *identifierContentPath = [self cacheDirectoryForIdentifier:cacheIdentifier];
     if (identifierContentPath == nil) {
-        completition([NSError errorWithDomain:@"Key identifier does not exist in local cache" code:0 userInfo:nil]);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            completition([NSError errorWithDomain:@"Key identifier does not exist in local cache" code:0 userInfo:nil]);
+        });
     } else {
         [diskIOQueue addOperationWithBlock:^{
             NSError* error = nil;
             [[NSFileManager defaultManager] removeItemAtPath:identifierContentPath error:&error];
-            completition(error);
+            dispatch_async(dispatch_get_main_queue(), ^{
+                completition(error);
+            });
             [self save]; // save changes
         }];
     }
@@ -259,7 +269,9 @@ withCompletition:(DMCacheBoxStoreData) completition {
         [data writeToFile:destination_path
                   options:NSDataWritingAtomic
                     error:&error];
-        completition(destination_path,replaceExistingKey,error);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            completition(destination_path,replaceExistingKey,error);
+        });
         [self save]; // save changes
     }];
 }
@@ -299,7 +311,9 @@ withCompletition:(DMCacheBoxStoreData) completition {
         [[NSFileManager defaultManager] copyItemAtPath:filePath
                                                 toPath:destination_path
                                                  error:&error];
-        completition(destination_path,replaceExistingKey,error);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            completition(destination_path,replaceExistingKey,error);
+        });
         [self save]; // save changes
     }];
         
@@ -326,7 +340,9 @@ withCompletition:(DMCacheBoxStoreMultipleData) completition {
                  progress:^(NSUInteger itemsDone) {
                      progress(itemsDone);
                  } withCompletition:^(NSArray *writtenCacheIdentifiers) {
-                     completition(writtenCacheIdentifiers);
+                     dispatch_async(dispatch_get_main_queue(), ^{
+                         completition(writtenCacheIdentifiers);
+                     });
                  }];
 }
 
@@ -341,7 +357,9 @@ withCompletition:(DMCacheBoxStoreMultipleData) completition {
                  progress:^(NSUInteger itemsDone) {
                      progress(itemsDone);
                  } withCompletition:^(NSArray *writtenCacheIdentifiers) {
-                     completition(writtenCacheIdentifiers);
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                         completition(writtenCacheIdentifiers);
+                    });
                  }];
 }
 
@@ -384,14 +402,18 @@ withCompletition:(DMCacheBoxStoreMultipleData) completition {
     [deleteOperations waitUntilAllOperationsAreFinished];
         // delete entry for successfully removed cached identifiers
     [self save]; // save changes
-    completition(writtenCacheIdentifiers);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        completition(writtenCacheIdentifiers);
+    });
 }
 
 #pragma mark - QUERY CACHED CONTENT
 
 - (NSData *) dataForIdentifier:(NSString *) cacheIdentifier {
     NSDictionary *cacheDict = [cacheContent objectForKey:cacheIdentifier];
-    if (cacheDict == nil && [[NSFileManager defaultManager] fileExistsAtPath:[self cacheDirectoryForIdentifier:cacheIdentifier]]) return nil;
+    if (cacheDict == nil && [[NSFileManager defaultManager] fileExistsAtPath:[self cacheDirectoryForIdentifier:cacheIdentifier]]) {
+        return nil;
+    }
     return [NSData dataWithContentsOfFile:[self cacheDirectoryForIdentifier:cacheIdentifier]];
 }
 
